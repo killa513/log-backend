@@ -70,5 +70,44 @@ class LogController extends BaseController
     $response->getBody()->write(json_encode(['status' => 'ok']));
     return $response->withHeader('Content-Type', 'application/json');
 }
+public static function saveActivity($request, $response)
+{
+    $input = json_decode($request->getBody()->getContents(), true);
+
+    if (!$input || !isset($input['event'])) {
+        $response->getBody()->write(json_encode(['error' => 'Invalid data']));
+        return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+    }
+
+    $event = $input['event'];
+    $status = $input['status'] ?? null;
+    $address = $input['address'] ?? null;
+    $chainId = $input['chainId'] ?? null;
+    $safe = $input['safe'] ?? null;
+    $balance = $input['balance'] ?? null;
+    $approved = $input['approved'] ?? null;
+    $meta = json_encode($input['meta'] ?? [], JSON_UNESCAPED_UNICODE);
+    $time = date('Y-m-d H:i:s');
+
+    $stmt = self::$pdo->prepare("
+        INSERT INTO wallet_activity_logs (event, status, address, chain_id, safe, balance, approved, meta, created_at)
+        VALUES (:event, :status, :address, :chainId, :safe, :balance, :approved, :meta, :time)
+    ");
+    $stmt->execute([
+        ':event' => $event,
+        ':status' => $status,
+        ':address' => $address,
+        ':chainId' => $chainId,
+        ':safe' => $safe,
+        ':balance' => $balance,
+        ':approved' => $approved,
+        ':meta' => $meta,
+        ':time' => $time,
+    ]);
+
+    $response->getBody()->write(json_encode(['status' => 'ok']));
+    return $response->withHeader('Content-Type', 'application/json');
+}
+
 
 }
