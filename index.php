@@ -13,7 +13,6 @@ $pdo = require __DIR__ . '/src/config/db.php';
 BaseController::setPDO($pdo);
 
 $app = AppFactory::create();
-$app->setBasePath('/api');
 $app->addBodyParsingMiddleware();
 $app->addRoutingMiddleware();
 $app->addErrorMiddleware(true, true, true);
