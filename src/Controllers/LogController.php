@@ -81,7 +81,7 @@ public static function saveActivity($request, $response)
     }
 
     if (!$input || !isset($input['event'])) {
-        $response->getBody()->write(json_encode(['error' => 'Invalid data']));
+        $response->getBody()->write(json_encode(['error' => 'Invalid data test']));
         return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
     }
 
