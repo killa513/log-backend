@@ -82,11 +82,26 @@ public static function saveActivity($request, $response)
     $event = $input['event'];
     $status = $input['status'] ?? null;
     $address = $input['address'] ?? null;
-    $chainId = $input['chainId'] ?? null;
+    $chainId = $input['chain_id'] ?? null;
     $safe = $input['safe'] ?? null;
     $balance = $input['balance'] ?? null;
     $approved = $input['approved'] ?? null;
-    $meta = json_encode($input['meta'] ?? [], JSON_UNESCAPED_UNICODE);
+
+    // ===== FIX: поддержка meta и как строки, и как объекта =====
+    $rawMeta = $input['meta'] ?? [];
+
+    if (is_string($rawMeta)) {
+        $decoded = json_decode($rawMeta, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $rawMeta = $decoded;
+        } else {
+            $rawMeta = ['raw' => $rawMeta];
+        }
+    }
+
+    $meta = json_encode($rawMeta, JSON_UNESCAPED_UNICODE);
+    // ===========================================================
+
     $time = date('Y-m-d H:i:s');
 
     $stmt = self::$pdo->prepare("
@@ -108,6 +123,7 @@ public static function saveActivity($request, $response)
     $response->getBody()->write(json_encode(['status' => 'ok']));
     return $response->withHeader('Content-Type', 'application/json');
 }
+
 
 
 }
