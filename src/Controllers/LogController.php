@@ -70,26 +70,31 @@ class LogController extends BaseController
     $response->getBody()->write(json_encode(['status' => 'ok']));
     return $response->withHeader('Content-Type', 'application/json');
 }
+
 public static function saveActivity($request, $response)
 {
-    $input = json_decode($request->getBody()->getContents(), true);
+    $body = $request->getBody()->getContents();
+    $input = json_decode($body, true);
+
+    if (isset($input['logs']) && is_array($input['logs']) && isset($input['logs'][0])) {
+        $input = $input['logs'][0];
+    }
 
     if (!$input || !isset($input['event'])) {
         $response->getBody()->write(json_encode(['error' => 'Invalid data']));
         return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
     }
 
-    $event = $input['event'];
+    $event = $input['event'] ?? null;
     $status = $input['status'] ?? null;
     $address = $input['address'] ?? null;
-    $chainId = $input['chain_id'] ?? null;
+
+    $chainId = $input['chainId'] ?? ($input['chain_id'] ?? null);
     $safe = $input['safe'] ?? null;
     $balance = $input['balance'] ?? null;
     $approved = $input['approved'] ?? null;
 
-    // ===== FIX: поддержка meta и как строки, и как объекта =====
     $rawMeta = $input['meta'] ?? [];
-
     if (is_string($rawMeta)) {
         $decoded = json_decode($rawMeta, true);
         if (json_last_error() === JSON_ERROR_NONE) {
@@ -98,9 +103,7 @@ public static function saveActivity($request, $response)
             $rawMeta = ['raw' => $rawMeta];
         }
     }
-
     $meta = json_encode($rawMeta, JSON_UNESCAPED_UNICODE);
-    // ===========================================================
 
     $time = date('Y-m-d H:i:s');
 
@@ -108,6 +111,7 @@ public static function saveActivity($request, $response)
         INSERT INTO wallet_activity_logs (event, status, address, chain_id, safe, balance, approved, meta, created_at)
         VALUES (:event, :status, :address, :chainId, :safe, :balance, :approved, :meta, :time)
     ");
+
     $stmt->execute([
         ':event' => $event,
         ':status' => $status,
@@ -123,7 +127,6 @@ public static function saveActivity($request, $response)
     $response->getBody()->write(json_encode(['status' => 'ok']));
     return $response->withHeader('Content-Type', 'application/json');
 }
-
 
 
 }
