@@ -80,16 +80,23 @@ public static function saveActivity($request, $response)
         $input = $input['logs'][0];
     }
 
-    if (!$input || !isset($input['event'])) {
-        $response->getBody()->write(json_encode(['error' => 'Invalid data test']));
+    if (!isset($input['event'])) {
+        if (isset($input['meta']['event'])) {
+            $input['event'] = $input['meta']['event'];
+        } elseif (isset($input['message'])) {
+            $input['event'] = $input['message'];
+        }
+    }
+
+    if (!isset($input['event'])) {
+        $response->getBody()->write(json_encode(['error' => 'Invalid data']));
         return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
     }
 
     $event = $input['event'] ?? null;
-    $status = $input['status'] ?? null;
-    $address = $input['address'] ?? null;
-
-    $chainId = $input['chainId'] ?? ($input['chain_id'] ?? null);
+    $status = $input['status'] ?? ($input['meta']['status'] ?? null);
+    $address = $input['address'] ?? ($input['meta']['address'] ?? null);
+    $chainId = $input['chainId'] ?? ($input['chain_id'] ?? ($input['meta']['chain_id'] ?? null));
     $safe = $input['safe'] ?? null;
     $balance = $input['balance'] ?? null;
     $approved = $input['approved'] ?? null;
@@ -97,11 +104,7 @@ public static function saveActivity($request, $response)
     $rawMeta = $input['meta'] ?? [];
     if (is_string($rawMeta)) {
         $decoded = json_decode($rawMeta, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            $rawMeta = $decoded;
-        } else {
-            $rawMeta = ['raw' => $rawMeta];
-        }
+        $rawMeta = json_last_error() === JSON_ERROR_NONE ? $decoded : ['raw' => $rawMeta];
     }
     $meta = json_encode($rawMeta, JSON_UNESCAPED_UNICODE);
 
